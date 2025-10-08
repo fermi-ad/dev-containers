@@ -42,7 +42,7 @@ jobs:
       - name: Build image and push to adregistry 
         uses: docker/build-push-action@v4 
         with:
-          context: ${{ inputs.language }}
+          context: ./${{ inputs.language }}
           push: true 
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
