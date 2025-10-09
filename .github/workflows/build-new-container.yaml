@@ -8,6 +8,7 @@ on:
         type: choice
         options:
         - flutter
+        - rust
         # Add new options as dev containers for new languages are created
       version:
         required: true 
