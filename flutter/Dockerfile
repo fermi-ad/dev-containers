@@ -2,7 +2,7 @@ FROM redhat/ubi9-minimal
 
 # Install tools
 USER root
-RUN microdnf update && microdnf install -y unzip git findutils which tar && microdnf clean all
+RUN microdnf update -y && microdnf install -y unzip git findutils which tar && microdnf clean all
 RUN useradd dev
 RUN mkdir /flutter && chown -R dev /flutter
 
