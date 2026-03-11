@@ -8,6 +8,7 @@ on:
         type: choice
         options:
         - flutter
+        - python
         - rust-kafka
         - rust
         # Add new options as dev containers for new languages are created
