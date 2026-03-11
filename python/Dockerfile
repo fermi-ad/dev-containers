@@ -10,7 +10,7 @@ USER dev
 
 # Install uv
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/home/dev/.cargo/bin:/home/dev/.local/bin:${PATH}"
+ENV PATH="/home/dev/.local/bin:${PATH}"
 
 # Install Python 3.12
 RUN uv python install 3.12
