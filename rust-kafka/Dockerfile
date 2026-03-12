@@ -2,7 +2,7 @@ FROM redhat/ubi9-minimal
 
 # Install utilities
 USER root
-RUN microdnf update -y && microdnf install -y cmake gcc gcc-c++ git kernel-tools libcurl-devel librdkafka-devel openssl-devel pkgconf tar && microdnf clean all
+RUN microdnf update -y && microdnf install -y --enablerepo=rhel-9-for-x86_64-baseos-rpms perf && microdnf install -y cmake gcc gcc-c++ git libcurl-devel librdkafka-devel openssl-devel pkgconf tar && microdnf clean all
 
 # Switch to default user
 RUN adduser dev
