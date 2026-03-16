@@ -1,11 +1,11 @@
-FROM redhat/ubi9-minimal
+FROM debian:trixie-slim
 
 # Install utilities
 USER root
-RUN microdnf update -y && microdnf install -y --enablerepo=rhel-9-for-x86_64-baseos-rpms perf && microdnf install -y cmake gcc gcc-c++ git libcurl-devel librdkafka-devel openssl-devel pkgconf tar && microdnf clean all
+RUN apt-get update -y && apt-get install -y cmake curl gcc g++ git libcurl4-openssl-dev libsasl2-dev libssl-dev pkgconf tar && apt-get clean
 
 # Switch to default user
-RUN adduser dev
+RUN useradd -ms /bin/bash dev
 USER dev 
 
 # Install rust 
