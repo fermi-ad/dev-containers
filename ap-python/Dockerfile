@@ -6,6 +6,8 @@ EXPOSE 8000
 
 RUN useradd -ms /bin/bash -G sudo dev
 
+RUN mkdir -p /home/dev/.cache/uv && chown -R dev:dev /home/dev/
+
 USER dev
 
 RUN echo "alias uv-sync='uv sync'" >> ~/.bashrc \
