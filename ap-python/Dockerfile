@@ -1,6 +1,6 @@
 FROM ghcr.io/astral-sh/uv:python3.12-trixie
 
-RUN apt update -y && apt install libgl1 sudo && apt clean
+RUN apt-get update -y && apt-get install -y libgl1 sudo && apt-get clean -y
 
 ENV UV_LINK_MODE="copy" UV_CACHE_DIR="/home/dev/.cache/uv" PIP_DISABLE_PIP_VERSION_CHECK="1" PYTHONDONTWRITEBYTECODE="1" PYTHONUNBUFFERED="1"
 
