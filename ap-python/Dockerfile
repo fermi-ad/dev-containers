@@ -6,7 +6,7 @@ ENV UV_LINK_MODE="copy" UV_CACHE_DIR="/home/dev/.cache/uv" PIP_DISABLE_PIP_VERSI
 
 EXPOSE 8000
 
-RUN useradd -ms /bin/bash -G sudo dev
+RUN useradd -ms /bin/bash -G sudo dev && echo "dev ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 USER dev
 
