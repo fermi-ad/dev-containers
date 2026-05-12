@@ -20,6 +20,8 @@ EXPOSE 8000
 
 RUN useradd -ms /bin/bash -G sudo dev && echo "dev ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
+RUN mkdir -p /home/dev/.cache/uv && chown -R dev:dev /home/dev/
+
 USER dev
 
 RUN echo "alias sync='uv sync'" >> ~/.bashrc \
