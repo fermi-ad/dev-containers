@@ -2,7 +2,7 @@ FROM debian:trixie-slim
 
 # Install utilities
 USER root
-RUN apt-get update -y && apt-get install -y cmake curl gcc g++ git pkgconf tar && apt-get clean -y
+RUN apt-get update -y && apt-get install -y cmake curl gcc g++ git libcurl4-openssl-dev pkgconf tar && apt-get clean -y
 
 # Switch to default user
 RUN useradd -ms /bin/bash dev
