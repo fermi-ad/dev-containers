@@ -2,7 +2,7 @@ FROM debian:trixie-slim
 
 # Install utilities
 USER root
-RUN apt-get update -y && apt-get install -y curl gcc git libssl-dev pkgconf tar && apt-get clean
+RUN apt-get update -y && apt-get install -y curl gcc git pkgconf tar && apt-get clean
 
 # Switch to default user
 RUN useradd -ms /bin/bash dev
