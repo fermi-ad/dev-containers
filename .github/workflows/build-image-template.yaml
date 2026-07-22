@@ -1,0 +1,104 @@
+name: Build Single Image Template
+
+on:
+  workflow_call:
+    inputs:
+      language:
+        required: true
+        type: string
+      version:
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  build-and-push:
+    strategy:
+      fail-fast: false
+      matrix:
+        include-arch:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.include-arch.runner }}
+    steps:
+      - name: Checking out Dockerfiles
+        uses: actions/checkout@v7
+
+      - name: Resolve Version Tag
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "tag=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: adregistry.fnal.gov/dev-containers/${{ inputs.language }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.tag }}-${{ matrix.include-arch.arch }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to AD Registry
+        uses: docker/login-action@v4
+        with:
+          registry: adregistry.fnal.gov
+          username: ${{ secrets.ADREGISTRY_USERNAME }}
+          password: ${{ secrets.ADREGISTRY_SECRET }}
+
+      - name: Build image and push
+        uses: docker/build-push-action@v7
+        with:
+          context: ./${{ inputs.language }}
+          platforms: linux/${{ matrix.include-arch.arch }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=adregistry.fnal.gov/dev-containers/${{ inputs.language }}:buildcache-${{ matrix.include-arch.arch }}
+          cache-to: type=registry,ref=adregistry.fnal.gov/dev-containers/${{ inputs.language }}:buildcache-${{ matrix.include-arch.arch }},mode=max
+
+  merge:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve Version Tag
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "tag=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: adregistry.fnal.gov/dev-containers/${{ inputs.language }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ steps.version.outputs.tag }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to AD Registry
+        uses: docker/login-action@v4
+        with:
+          registry: adregistry.fnal.gov
+          username: ${{ secrets.ADREGISTRY_USERNAME }}
+          password: ${{ secrets.ADREGISTRY_SECRET }}
+
+      - name: Create Multi-Arch Manifest
+        run: |
+          docker buildx imagetools create \
+            $(echo "${{ steps.meta.outputs.tags }}" | xargs -I {} echo "-t {}") \
+            adregistry.fnal.gov/dev-containers/${{ inputs.language }}:${{ steps.version.outputs.tag }}-amd64 \
+            adregistry.fnal.gov/dev-containers/${{ inputs.language }}:${{ steps.version.outputs.tag }}-arm64
