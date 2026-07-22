@@ -26,14 +26,20 @@ jobs:
       - name: Checking out Dockerfiles
         uses: actions/checkout@v7
 
-      - name: Resolve Version Tag
+      - name: Resolve Image Version
         id: version
         run: |
           if [ -n "${{ inputs.version }}" ]; then
-            echo "tag=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            # Priority 1: Manual string passed in workflow_dispatch
+            TAG="${{ inputs.version }}"
+          elif [ -f "./${{ inputs.language }}/VERSION" ]; then
+            # Priority 2: Read VERSION file directly from container directory
+            TAG=$(tr -d ' \r\n' < ./${{ inputs.language }}/VERSION)
           else
-            echo "tag=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+            # Priority 3: Fallback to short commit SHA
+            TAG=$(echo ${{ github.sha }} | cut -c1-7)
           fi
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Docker meta
         id: meta
@@ -68,14 +74,20 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve Version Tag
+      - name: Checking out Dockerfiles
+        uses: actions/checkout@v7
+
+      - name: Resolve Image Version
         id: version
         run: |
           if [ -n "${{ inputs.version }}" ]; then
-            echo "tag=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            TAG="${{ inputs.version }}"
+          elif [ -f "./${{ inputs.language }}/VERSION" ]; then
+            TAG=$(tr -d ' \r\n' < ./${{ inputs.language }}/VERSION)
           else
-            echo "tag=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+            TAG=$(echo ${{ github.sha }} | cut -c1-7)
           fi
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Docker meta
         id: meta
@@ -87,7 +99,7 @@ jobs:
             type=raw,value=${{ steps.version.outputs.tag }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to AD Registry
         uses: docker/login-action@v4
