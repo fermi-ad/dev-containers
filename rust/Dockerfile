@@ -2,10 +2,11 @@ FROM debian:trixie-slim
 
 # Install utilities
 USER root
-RUN apt-get update -y && apt-get install -y curl gcc git pkgconf tar && apt-get clean
+RUN apt-get update -y && apt-get install -y cmake curl gcc g++ git libcurl4-openssl-dev pkgconf tar && apt-get clean -y
 
 # Switch to default user
 RUN useradd -ms /bin/bash dev
+RUN usermod -aG sudo dev
 USER dev 
 
 # Install rust 
