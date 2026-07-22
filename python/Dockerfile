@@ -7,6 +7,9 @@ RUN microdnf update -y && microdnf install -y gcc git openssl-devel pkgconf sudo
 # Switch to default user
 RUN adduser dev
 RUN usermod --append -G wheel dev
+# Grant passwordless sudo permissions to the wheel group
+RUN echo "%wheel ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/wheel \
+    && chmod 0440 /etc/sudoers.d/wheel
 USER dev
 
 # Install uv
