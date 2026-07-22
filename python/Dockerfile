@@ -1,4 +1,4 @@
-FROM redhat/ubi9-minimal
+FROM adregistry.fnal.gov/dev-containers/redhat-ubi9-minimal
 
 # Install utilities
 USER root
