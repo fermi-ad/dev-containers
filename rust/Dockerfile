@@ -2,7 +2,12 @@ FROM adregistry.fnal.gov/dev-containers/redhat-ubi9-minimal
 
 # Install utilities
 USER root
-RUN microdnf update -y && microdnf remove -y curl-minimal && microdnf install -y cmake curl gcc gcc-c++ git libcurl-devel pkgconf sudo tar && microdnf clean -y
+RUN microdnf update -y && microdnf install -y cmake gcc gcc-c++ git pkgconf sudo tar
+# Swap curl-minimal for the full thing. Rust will fail without this.
+RUN microdnf download -y curl libcurl libcurl-devel \
+    && rpm -Uvh --nodeps --replacefiles curl-*.rpm libcurl-*.rpm libcurl-devel-*.rpm \
+    && rm -f *.rpm \
+    && microdnf clean all -y
 
 # Switch to default user
 RUN useradd -G wheel dev
