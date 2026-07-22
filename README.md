@@ -13,5 +13,11 @@ Then, go to the **Actions** tab of this repo and select **Upload new image**:
 
 The workflow will automatically append the build date (or commit SHA) to form the full image tag (e.g., `3.35.5-20260722`), ensuring tag uniqueness regardless of git history changes.
 
+### Versioning
+
+Each container directory contains a `VERSION` file. When you update a container (for example, upgrading the Flutter SDK or adding a new system dependency), you must update the version string in this file.
+
+The automated GitHub Actions workflow reads this file and appends the current date and short Git commit SHA to create a unique, immutable tag in Harbor (e.g., `3.35.5-20260722-a1b2c3d`). This ensures developers can always pin to a specific, reproducible build of the environment.
+
 ## Adding a new container for a new language
 If you'd like to add a container for a language that is not yet in this repo, create a directory with that language's name and add the relevant Dockerfile inside. **Be sure to add the language as an option in the `.github/workflows/build-new-container.yaml` file (needs to match the name of the directory you created!).**
