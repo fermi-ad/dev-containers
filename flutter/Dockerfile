@@ -2,8 +2,9 @@ FROM redhat/ubi9-minimal
 
 # Install tools
 USER root
-RUN microdnf update -y && microdnf install -y unzip git findutils which tar && microdnf clean all
+RUN microdnf update -y && microdnf install -y unzip git findutils which tar sudo && microdnf clean all
 RUN useradd dev
+RUN usermod --append -G wheel dev
 RUN mkdir /flutter && chown -R dev /flutter
 
 # Change to default user
