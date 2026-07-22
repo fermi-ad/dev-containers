@@ -10,7 +10,6 @@ on:
         - ap-python
         - flutter
         - python
-        - rust-with-c
         - rust
         # Add new options as dev containers for new languages are created
       version:
