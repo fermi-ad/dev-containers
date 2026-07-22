@@ -2,7 +2,7 @@ FROM adregistry.fnal.gov/dev-containers/redhat-ubi9-minimal
 
 # Install utilities
 USER root
-RUN microdnf update -y && microdnf install -y --allowerasing cmake curl gcc gcc-c++ git libcurl-devel pkgconf sudo tar && microdnf clean -y
+RUN microdnf update -y && microdnf remove -y curl-minimal && microdnf install -y cmake curl gcc gcc-c++ git libcurl-devel pkgconf sudo tar && microdnf clean -y
 
 # Switch to default user
 RUN useradd -G wheel dev
