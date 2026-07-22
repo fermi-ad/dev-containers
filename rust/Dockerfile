@@ -6,7 +6,9 @@ RUN apt-get update -y && apt-get install -y cmake curl gcc g++ git libcurl4-open
 
 # Switch to default user
 RUN useradd -ms /bin/bash dev
-RUN usermod -aG sudo dev
+# Grant passwordless sudo permissions to the dev user
+RUN echo "dev ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dev \
+    && chmod 0440 /etc/sudoers.d/dev
 USER dev 
 
 # Install rust 
