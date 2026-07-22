@@ -2,10 +2,11 @@ FROM redhat/ubi9-minimal
 
 # Install utilities
 USER root
-RUN microdnf update -y && microdnf install -y gcc git openssl-devel pkgconf tar vim && microdnf clean all
+RUN microdnf update -y && microdnf install -y gcc git openssl-devel pkgconf sudo tar vim && microdnf clean all
 
 # Switch to default user
 RUN adduser dev
+RUN usermod --append -G wheel dev
 USER dev
 
 # Install uv
