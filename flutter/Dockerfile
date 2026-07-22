@@ -5,6 +5,9 @@ USER root
 RUN microdnf update -y && microdnf install -y unzip git findutils which tar sudo && microdnf clean all
 RUN useradd dev
 RUN usermod --append -G wheel dev
+# Grant passwordless sudo permissions to the wheel group
+RUN echo "%wheel ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/wheel \
+    && chmod 0440 /etc/sudoers.d/wheel
 RUN mkdir /flutter && chown -R dev /flutter
 
 # Change to default user
