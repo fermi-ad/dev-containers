@@ -1,14 +1,14 @@
-FROM debian:trixie-slim
+FROM adregistry.fnal.gov/dev-containers/redhat-ubi9-minimal
 
 # Install utilities
 USER root
-RUN apt-get update -y && apt-get install -y cmake curl gcc g++ git libcurl4-openssl-dev pkgconf sudo tar && apt-get clean -y
+RUN microdnf update -y && microdnf install -y cmake curl gcc gcc-c++ git libcurl-devel pkgconf sudo tar && microdnf clean -y
 
 # Switch to default user
-RUN useradd -ms /bin/bash dev
-# Grant passwordless sudo permissions to the dev user
-RUN echo "dev ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dev \
-    && chmod 0440 /etc/sudoers.d/dev
+RUN useradd -G wheel dev
+# Grant passwordless sudo permissions to the wheel group
+RUN echo "%wheel ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/wheel \
+    && chmod 0440 /etc/sudoers.d/wheel
 USER dev 
 
 # Install rust 
