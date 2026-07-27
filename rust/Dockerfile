@@ -2,12 +2,22 @@ FROM adregistry.fnal.gov/dev-containers/redhat-ubi9-minimal
 
 # Install utilities
 USER root
-RUN microdnf update -y && microdnf install -y cmake gcc gcc-c++ git libssh libpsl libbrotli pkgconf sudo tar 
-# Swap curl-minimal for the full thing. Rust will fail without this.
-RUN microdnf download -y curl libcurl libcurl-devel \
+# Update, install build tools, swap curl-minimal, and clean up in one layer
+RUN microdnf update -y && microdnf install -y \
+    cmake \
+    gcc \
+    gcc-c++ \
+    git \
+    libssh \
+    libpsl \
+    libbrotli \
+    pkgconf \
+    sudo \
+    tar \
+    && microdnf download -y curl libcurl libcurl-devel \
     && rpm -Uvh --nodeps --replacefiles curl-*.rpm libcurl-*.rpm libcurl-devel-*.rpm \
     && rm -f *.rpm \
-    && microdnf clean all -y
+    && microdnf clean all
 
 # Switch to default user
 RUN useradd -G wheel dev
