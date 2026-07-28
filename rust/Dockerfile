@@ -29,4 +29,10 @@ USER dev
 # Install rust 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/home/dev/.cargo/bin:${PATH}"
-RUN rustup update
+
+# Install coverage tools
+RUN rustup update && \
+    cargo install cargo-llvm-cov && \
+    rustup component add llvm-tools-preview && \
+    rm -rf /home/dev/.cargo/registry && \
+    rm -rf /home/dev/.cargo/git
