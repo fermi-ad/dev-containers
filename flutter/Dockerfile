@@ -13,7 +13,7 @@ RUN FLUTTER_ARCHIVE=$(curl -s https://storage.googleapis.com/flutter_infra_relea
     | jq -r '.releases[] | select(.channel=="stable") | .archive' | head -n 1) && \
     curl -L "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_ARCHIVE" \
     | tar -xJ -C /usr/local && \
-    chmod -R 555 $FLUTTER_HOME && \
+    chmod -R 777 $FLUTTER_HOME && \
     git config --global --add safe.directory /usr/local/flutter
 
 RUN useradd -G wheel dev
