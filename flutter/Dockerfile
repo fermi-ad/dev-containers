@@ -2,20 +2,26 @@ FROM adregistry.fnal.gov/dev-containers/redhat-ubi9-minimal
 
 # Install tools
 USER root
-RUN microdnf update -y && microdnf install -y unzip git findutils which tar sudo && microdnf clean all
-RUN useradd dev
-RUN usermod --append -G wheel dev
+RUN microdnf update -y && \
+    microdnf install -y findutils git jq sudo tar unzip which xz && \
+    microdnf clean all
+
+ENV FLUTTER_HOME=/usr/local/flutter
+ENV PATH="$FLUTTER_HOME/bin:$PATH"
+
+RUN FLUTTER_ARCHIVE=$(curl -s https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json \
+    | jq -r '.releases[] | select(.channel=="stable") | .archive' | head -n 1) && \
+    curl -L "https://googleapis.com{FLUTTER_ARCHIVE}" \
+    | tar -xJ -C /usr/local && \
+    git config --global --add safe.directory /usr/local/flutter
+
+RUN useradd -G wheel dev
 # Grant passwordless sudo permissions to the wheel group
 RUN echo "%wheel ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/wheel \
     && chmod 0440 /etc/sudoers.d/wheel
-RUN mkdir /flutter && chown -R dev /flutter
 
 # Change to default user
 USER dev
-
-# Get latest Flutter
-RUN git clone -v -b stable https://github.com/flutter/flutter /flutter
-ENV PATH="/flutter/bin:${PATH}"
 
 # Disable telemetry
 RUN flutter --disable-analytics
