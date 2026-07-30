@@ -11,7 +11,7 @@ ENV PATH="$FLUTTER_HOME/bin:$PATH"
 
 RUN FLUTTER_ARCHIVE=$(curl -s https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json \
     | jq -r '.releases[] | select(.channel=="stable") | .archive' | head -n 1) && \
-    curl -L "https://googleapis.com{FLUTTER_ARCHIVE}" \
+    curl -L "https://googleapis.com/${FLUTTER_ARCHIVE}" \
     | tar -xJ -C /usr/local && \
     git config --global --add safe.directory /usr/local/flutter
 
