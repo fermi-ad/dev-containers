@@ -1,0 +1,20 @@
+name: Flutter Container
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'flutter/**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Image version tag (optional)'
+        required: false
+        type: string
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-image-template.yml
+    with:
+      language: 'flutter'
+      version: ${{ inputs.version }}
+    secrets: inherit

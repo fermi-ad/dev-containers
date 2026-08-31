@@ -1,0 +1,116 @@
+name: Build Single Image Template
+
+on:
+  workflow_call:
+    inputs:
+      language:
+        required: true
+        type: string
+      version:
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  build-and-push:
+    strategy:
+      fail-fast: false
+      matrix:
+        include-arch:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.include-arch.runner }}
+    steps:
+      - name: Checking out Dockerfiles
+        uses: actions/checkout@v7
+
+      - name: Resolve Image Version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            # Priority 1: Manual string passed in workflow_dispatch
+            TAG="${{ inputs.version }}"
+          elif [ -f "./${{ inputs.language }}/VERSION" ]; then
+            # Priority 2: Read VERSION file directly from container directory
+            TAG=$(tr -d ' \r\n' < ./${{ inputs.language }}/VERSION)
+          else
+            # Priority 3: Fallback to short commit SHA
+            TAG=$(echo ${{ github.sha }} | cut -c1-7)
+          fi
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: adregistry.fnal.gov/dev-containers/${{ inputs.language }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.tag }}-${{ matrix.include-arch.arch }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to AD Registry
+        uses: docker/login-action@v4
+        with:
+          registry: adregistry.fnal.gov
+          username: ${{ secrets.ADREGISTRY_USERNAME }}
+          password: ${{ secrets.ADREGISTRY_SECRET }}
+
+      - name: Build image and push
+        uses: docker/build-push-action@v7
+        with:
+          context: ./${{ inputs.language }}
+          platforms: linux/${{ matrix.include-arch.arch }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=adregistry.fnal.gov/dev-containers/${{ inputs.language }}:buildcache-${{ matrix.include-arch.arch }}
+          cache-to: type=registry,ref=adregistry.fnal.gov/dev-containers/${{ inputs.language }}:buildcache-${{ matrix.include-arch.arch }},mode=max
+
+  merge:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checking out Dockerfiles
+        uses: actions/checkout@v7
+
+      - name: Resolve Image Version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            TAG="${{ inputs.version }}"
+          elif [ -f "./${{ inputs.language }}/VERSION" ]; then
+            TAG=$(tr -d ' \r\n' < ./${{ inputs.language }}/VERSION)
+          else
+            TAG=$(echo ${{ github.sha }} | cut -c1-7)
+          fi
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: adregistry.fnal.gov/dev-containers/${{ inputs.language }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ steps.version.outputs.tag }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to AD Registry
+        uses: docker/login-action@v4
+        with:
+          registry: adregistry.fnal.gov
+          username: ${{ secrets.ADREGISTRY_USERNAME }}
+          password: ${{ secrets.ADREGISTRY_SECRET }}
+
+      - name: Create Multi-Arch Manifest
+        run: |
+          docker buildx imagetools create \
+            $(echo "${{ steps.meta.outputs.tags }}" | xargs -I {} echo "-t {}") \
+            adregistry.fnal.gov/dev-containers/${{ inputs.language }}:${{ steps.version.outputs.tag }}-amd64 \
+            adregistry.fnal.gov/dev-containers/${{ inputs.language }}:${{ steps.version.outputs.tag }}-arm64

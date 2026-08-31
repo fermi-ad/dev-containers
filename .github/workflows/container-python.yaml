@@ -1,0 +1,21 @@
+name: Python Container
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'python/**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Image version tag (optional)'
+        required: false
+        type: string
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-image-template.yml
+    with:
+      language: 'python'
+      version: ${{ inputs.version }}
+    secrets: inherit
