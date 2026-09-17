@@ -8,6 +8,7 @@ on:
         type: choice
         options:
         - ap-python
+        - ap-python-xpra-base
         - flutter
         - python
         - rust
