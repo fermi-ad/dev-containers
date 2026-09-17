@@ -68,7 +68,7 @@ RUN dnf upgrade --refresh -y \
 	  xpra-server-6.4.4* \
 	  xpra-x11-6.4.4* \
  && dnf clean all \
- && useradd -m -u 1000 -U pyuser
+ && useradd -m -u 1000 -U pyuser \
  && rm -f /etc/machine-id \
  && dbus-uuidgen --ensure=/etc/machine-id \
  && mkdir -p /run/user/1000 /tmp/runtime-pyuser /tmp/.X11-unix /run/xpra \
