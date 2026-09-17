@@ -16,6 +16,15 @@ on:
       version:
         required: true 
         type: string
+      architecture:
+        description: 'Target specific architecture'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - amd64
+          - arm64
 
 jobs:
   build-and-push:
@@ -27,22 +36,38 @@ jobs:
           - arch: arm64
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
+    
     steps:
-      - name: Checking out Dockerfiles
+      - name: Checking out Dockerfiles 
+        # Skip the step if a specific architecture was requested and it doesn't match the matrix item
+        if: ${{ inputs.architecture == '' || inputs.architecture == 'all' || inputs.architecture == matrix.arch }}
         uses: actions/checkout@v6
 
       - name: Docker meta
+        # Skip the step if a specific architecture was requested and it doesn't match the matrix item
+        if: ${{ inputs.architecture == '' || inputs.architecture == 'all' || inputs.architecture == matrix.arch }}
         id: meta
         uses: docker/metadata-action@v6
         with:
           images: adregistry.fnal.gov/dev-containers/${{ inputs.language }}
           tags: |
-            type=raw,value=${{ inputs.version }}-${{ matrix.arch }}
+            # Always tag with the image's SHA
+            type=sha,prefix=
+
+            # Enable the 'latest' tag if this is a single-architecture build
+            type=raw,value=latest,enable=${{ inputs.architecture == matrix.arch }}
+            
+            # Append the architecture type if in a multi-architecture build
+            type=raw,value=${{ inputs.version }}${{ inputs.architecture == matrix.arch && '' || format('-{0}', matrix.arch) }}
 
       - name: Set up Docker Buildx
+        # Skip the step if a specific architecture was requested and it doesn't match the matrix item
+        if: ${{ inputs.architecture == '' || inputs.architecture == 'all' || inputs.architecture == matrix.arch }}
         uses: docker/setup-buildx-action@v4
 
       - name: Login to AD Registry, Harbor
+        # Skip the step if a specific architecture was requested and it doesn't match the matrix item
+        if: ${{ inputs.architecture == '' || inputs.architecture == 'all' || inputs.architecture == matrix.arch }}
         uses: docker/login-action@v4
         with:
           registry: adregistry.fnal.gov 
@@ -50,6 +75,8 @@ jobs:
           password: ${{ secrets.ADREGISTRY_SECRET }}
 
       - name: Build image and push to adregistry 
+        # Skip the step if a specific architecture was requested and it doesn't match the matrix item
+        if: ${{ inputs.architecture == '' || inputs.architecture == 'all' || inputs.architecture == matrix.arch }}
         uses: docker/build-push-action@v7 
         with:
           context: ./${{ inputs.language }}
@@ -59,6 +86,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   merge:
+    # Skip the job if only 1 architecture was selected
+    if: ${{ inputs.architecture == '' || inputs.architecture == 'all' }}
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
