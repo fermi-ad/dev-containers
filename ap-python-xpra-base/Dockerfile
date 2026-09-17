@@ -52,7 +52,7 @@ RUN dnf upgrade --refresh -y \
  && dnf install -y 'dnf-command(config-manager)' \
  && dnf config-manager --set-enabled crb \
  && dnf install -y epel-release \
- && curl https://xpra.org/get-xpra.sh | bash \
+ && curl https://xpra.org/get-xpra.sh | sed "s/sudo//g" | bash \
  && dnf makecache \
  && dnf install -y \
  	  openbox \
