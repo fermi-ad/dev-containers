@@ -58,7 +58,7 @@ jobs:
             type=raw,value=latest,enable=${{ inputs.architecture == matrix.arch }}
             
             # Append the architecture type if in a multi-architecture build
-            type=raw,value=${{ inputs.version }}${{ inputs.architecture == matrix.arch && '' || format('-{0}', matrix.arch) }}
+            type=raw,value=${{ inputs.version }}${{ inputs.architecture != matrix.arch && format('-{0}', matrix.arch) || '' }}
 
       - name: Set up Docker Buildx
         # Skip the step if a specific architecture was requested and it doesn't match the matrix item
