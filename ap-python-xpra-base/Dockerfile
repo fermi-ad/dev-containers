@@ -52,7 +52,7 @@ RUN dnf upgrade --refresh -y \
  && dnf install -y 'dnf-command(config-manager)' \
  && dnf config-manager --set-enabled crb \
  && dnf install -y epel-release \
- && curl https://xpra.org/get-xpra.sh | sed "s/sudo//g" | bash \
+ && curl -o "/etc/yum.repos.d/xpra.repo" https://raw.githubusercontent.com/Xpra-org/xpra/master/packaging/repos/AlmaLinux/xpra.repo \
  && dnf makecache \
  && dnf install -y \
  	  openbox \
