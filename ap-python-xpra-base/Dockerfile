@@ -27,7 +27,7 @@ COPY --chmod=644 .kerberos/krb5.conf /etc/krb5.conf
 # Install D-Bus and configure machine ID for Xpra
 # Create runtime directories for Xpra with proper permissions
 # Combined into single layer to reduce image size
-RUN dnf upgrade --refresh -y |
+RUN dnf upgrade --refresh -y \
  && dnf autoremove \
  && dnf install -y \
       ca-certificates \
