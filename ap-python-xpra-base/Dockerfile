@@ -52,7 +52,7 @@ RUN dnf upgrade --refresh -y \
  && dnf install -y 'dnf-command(config-manager)' \
  && dnf config-manager --set-enabled crb \
  && dnf install -y epel-release \
- && curl -sL https://xpra.org | python3 - --install-repo \
+ && curl https://xpra.org/get-xpra.sh | bash \
  && dnf makecache \
  && dnf install -y \
  	  openbox \
