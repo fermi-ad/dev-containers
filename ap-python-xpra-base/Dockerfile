@@ -68,10 +68,11 @@ RUN dnf upgrade --refresh -y \
 	  xpra-server-6.4.4* \
 	  xpra-x11-6.4.4* \
  && dnf clean all \
- && useradd -m -u 1000 -U pyuser \
+ && groupadd pygroup \
+ && useradd -m -u 1000 -N -g pygroup pyuser \
  && rm -f /etc/machine-id \
  && dbus-uuidgen --ensure=/etc/machine-id \
  && mkdir -p /run/user/1000 /tmp/runtime-pyuser /tmp/.X11-unix /run/xpra \
- && chown -R pyuser:pyuser /run/user/1000 /tmp/runtime-pyuser /run/xpra \
+ && chown -R pyuser:pygroup /run/user/1000 /tmp/runtime-pyuser /run/xpra \
  && chmod 700 /run/user/1000 /tmp/runtime-pyuser /run/xpra \
  && chmod 1777 /tmp/.X11-unix
