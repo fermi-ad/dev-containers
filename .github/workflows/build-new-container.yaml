@@ -11,6 +11,7 @@ on:
         - ap-python-xpra-base
         - flutter
         - python
+        - redhat-ubi9-minimal
         - rust
         # Add new options as dev containers for new languages are created
       version:
