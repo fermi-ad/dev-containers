@@ -1,11 +1,15 @@
-FROM redhat/ubi9-minimal
+FROM adregistry.fnal.gov/dev-containers/redhat-ubi9-minimal
 
 # Install utilities
 USER root
-RUN microdnf update -y && microdnf install -y gcc git openssl-devel pkgconf tar vim && microdnf clean all
+RUN microdnf update -y && microdnf install -y gcc git openssl-devel pkgconf sudo tar vim && microdnf clean all
 
 # Switch to default user
 RUN adduser dev
+RUN usermod --append -G wheel dev
+# Grant passwordless sudo permissions to the wheel group
+RUN echo "%wheel ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/wheel \
+    && chmod 0440 /etc/sudoers.d/wheel
 USER dev
 
 # Install uv
