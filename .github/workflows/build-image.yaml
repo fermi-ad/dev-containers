@@ -1,0 +1,122 @@
+# Builds one image for each of its platforms, then applies the final tags with
+# .github/scripts/publish_tags.sh (in the publish job for multi-arch images).
+# Called by build-images.yaml; not meant to be run directly.
+name: Build image
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: Image directory name
+        required: true
+        type: string
+      platforms:
+        description: 'JSON list of {"platform", "runner"} objects'
+        required: true
+        type: string
+      tags:
+        description: Newline-separated fully-qualified tags; the first is the immutable tag
+        required: true
+        type: string
+      parent-context:
+        description: Optional build context overriding an in-repo FROM reference
+        required: false
+        type: string
+        default: ''
+      push:
+        description: Publish to the registry (false only builds)
+        required: true
+        type: boolean
+      multi-arch:
+        description: More than one platform, so tags are applied after all platforms finish
+        required: true
+        type: boolean
+    secrets:
+      ADREGISTRY_USERNAME:
+        required: false
+      ADREGISTRY_SECRET:
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  REPOSITORY: adregistry.fnal.gov/dev-containers/${{ inputs.image }}
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.platforms) }}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to AD Registry
+        if: inputs.push
+        uses: docker/login-action@v4
+        with:
+          registry: adregistry.fnal.gov
+          username: ${{ secrets.ADREGISTRY_USERNAME }}
+          password: ${{ secrets.ADREGISTRY_SECRET }}
+
+      - name: Per-platform tag
+        id: tag
+        env:
+          TAGS: ${{ inputs.tags }}
+        run: echo "tag=$(head -n1 <<< "$TAGS")-${{ matrix.platform }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build${{ inputs.push && ' and push' || '' }}
+        uses: docker/build-push-action@v7
+        with:
+          context: ./${{ inputs.image }}
+          build-contexts: ${{ inputs.parent-context }}
+          platforms: linux/${{ matrix.platform }}
+          push: ${{ inputs.push }}
+          # publish_tags.sh later points the final tags at these per-platform images.
+          tags: ${{ steps.tag.outputs.tag }}
+          cache-from: type=registry,ref=${{ env.REPOSITORY }}:buildcache-${{ matrix.platform }}
+          cache-to: ${{ inputs.push && format('type=registry,ref={0}:buildcache-{1},mode=max', env.REPOSITORY, matrix.platform) || '' }}
+
+      # A single-platform image has nothing to wait for, so apply its tags here
+      # instead of starting the publish job.
+      - name: Publish tags
+        if: inputs.push && !inputs.multi-arch
+        env:
+          IMAGE: ${{ inputs.image }}
+          TAGS: ${{ inputs.tags }}
+          PLATFORMS: ${{ inputs.platforms }}
+        run: bash .github/scripts/publish_tags.sh
+
+  publish:
+    name: Publish manifest
+    needs: build
+    if: inputs.push && inputs.multi-arch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to AD Registry
+        uses: docker/login-action@v4
+        with:
+          registry: adregistry.fnal.gov
+          username: ${{ secrets.ADREGISTRY_USERNAME }}
+          password: ${{ secrets.ADREGISTRY_SECRET }}
+
+      - name: Publish tags
+        env:
+          IMAGE: ${{ inputs.image }}
+          TAGS: ${{ inputs.tags }}
+          PLATFORMS: ${{ inputs.platforms }}
+        run: bash .github/scripts/publish_tags.sh

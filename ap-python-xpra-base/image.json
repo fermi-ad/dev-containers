@@ -1,0 +1,4 @@
+{
+  "version_arg": "ALMALINUX_VERSION",
+  "platforms": ["amd64"]
+}

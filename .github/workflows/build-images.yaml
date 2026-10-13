@@ -1,0 +1,124 @@
+# Builds every dev-container image whose directory changed.
+#
+# - push to main:       build and publish changed images (plus images built FROM them)
+# - pull_request:       build changed images without publishing
+# - workflow_dispatch:  rebuild one image, or all images, and publish
+#
+# Image settings live next to each Dockerfile in image.json; see README.md.
+# Nothing builds unless the checks job (planner tests, actionlint, whitespace) passes.
+name: Build images
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Image directory to rebuild (leave empty to rebuild all)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+# Cancel superseded PR builds. Publishing runs are never grouped: GitHub discards
+# a pending run when a newer one queues, which would skip that push's images.
+concurrency:
+  group: build-images-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Test build planner
+        run: python3 -m unittest discover -s .github/scripts -v
+
+      - name: Lint scripts
+        run: shellcheck .github/scripts/*.sh
+
+      - name: Lint workflows
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
+      - name: Check whitespace
+        run: |
+          if git grep -nIP '\t|[ \t]+$' -- . ; then
+            echo "::error::Tabs or trailing whitespace found (see lines above)"
+            exit 1
+          fi
+
+  plan:
+    needs: checks
+    runs-on: ubuntu-latest
+    outputs:
+      base: ${{ steps.plan.outputs.base }}
+      dependent: ${{ steps.plan.outputs.dependent }}
+      push: ${{ steps.plan.outputs.push }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Plan builds
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          REQUESTED_IMAGE: ${{ inputs.image }}
+        run: python3 .github/scripts/plan_builds.py
+
+  base:
+    name: ${{ matrix.image }}
+    needs: plan
+    if: needs.plan.outputs.base != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.base) }}
+    uses: ./.github/workflows/build-image.yaml
+    with:
+      image: ${{ matrix.image }}
+      platforms: ${{ matrix.platforms }}
+      tags: ${{ matrix.tags }}
+      parent-context: ${{ matrix.parent-context }}
+      push: ${{ fromJSON(needs.plan.outputs.push) }}
+      multi-arch: ${{ matrix.multi-arch }}
+    secrets:
+      ADREGISTRY_USERNAME: ${{ secrets.ADREGISTRY_USERNAME }}
+      ADREGISTRY_SECRET: ${{ secrets.ADREGISTRY_SECRET }}
+
+  dependent:
+    name: ${{ matrix.image }}
+    needs: [plan, base]
+    # Run when base images succeeded or had nothing to build.
+    if: >-
+      !cancelled()
+      && needs.plan.result == 'success'
+      && needs.plan.outputs.dependent != '[]'
+      && (needs.base.result == 'success' || needs.base.result == 'skipped')
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.dependent) }}
+    uses: ./.github/workflows/build-image.yaml
+    with:
+      image: ${{ matrix.image }}
+      platforms: ${{ matrix.platforms }}
+      tags: ${{ matrix.tags }}
+      parent-context: ${{ matrix.parent-context }}
+      push: ${{ fromJSON(needs.plan.outputs.push) }}
+      multi-arch: ${{ matrix.multi-arch }}
+    secrets:
+      ADREGISTRY_USERNAME: ${{ secrets.ADREGISTRY_USERNAME }}
+      ADREGISTRY_SECRET: ${{ secrets.ADREGISTRY_SECRET }}

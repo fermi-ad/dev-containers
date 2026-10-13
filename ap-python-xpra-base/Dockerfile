@@ -3,15 +3,16 @@
 # ============================================================================
 # Build arguments for version management
 # Override at build time with: docker build --build-arg PYTHON_VERSION=3.13
+# ALMALINUX_VERSION is also the image version tag.
 # ============================================================================
-ARG ALMALINUX_VERSION=9-base
+ARG ALMALINUX_VERSION=9.8
 ARG PYTHON_VERSION=3.12
 
 # ============================================================================
 # Base stage: Minimal runtime dependencies
 # Shared by all deployment variants (CLI, GUI, Xpra)
 # ============================================================================
-FROM almalinux/${ALMALINUX_VERSION}
+FROM almalinux/9-base:${ALMALINUX_VERSION}
 
 # Re-declare args for use in this stage
 ARG PYTHON_VERSION
@@ -55,18 +56,18 @@ RUN dnf upgrade --refresh -y \
  && curl -L -o /etc/yum.repos.d/xpra.repo https://raw.githubusercontent.com/Xpra-org/xpra/master/packaging/repos/almalinux/xpra.repo \
  && dnf makecache \
  && dnf install -y \
- 	  openbox \
+      openbox \
       xpra-6.4.4* \
-	  xpra-audio-6.4.4* \
-	  xpra-client-6.4.4* \
-	  xpra-client-gtk3-6.4.4* \
-	  xpra-codecs-6.4.4* \
-	  xpra-codecs-nvidia-6.4.4* \
-	  xpra-common-6.4.4* \
-	  xpra-filesystem-6.4.4* \
-	  xpra-html5 \
-	  xpra-server-6.4.4* \
-	  xpra-x11-6.4.4* \
+      xpra-audio-6.4.4* \
+      xpra-client-6.4.4* \
+      xpra-client-gtk3-6.4.4* \
+      xpra-codecs-6.4.4* \
+      xpra-codecs-nvidia-6.4.4* \
+      xpra-common-6.4.4* \
+      xpra-filesystem-6.4.4* \
+      xpra-html5 \
+      xpra-server-6.4.4* \
+      xpra-x11-6.4.4* \
  && dnf clean all \
  && groupadd pygroup \
  && useradd -m -u 1000 -N -g pygroup pyuser \
