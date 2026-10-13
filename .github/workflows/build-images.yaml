@@ -39,6 +39,9 @@ jobs:
       - name: Test build planner
         run: python3 -m unittest discover -s .github/scripts -v
 
+      - name: Lint scripts
+        run: shellcheck .github/scripts/*.sh
+
       - name: Lint workflows
         uses: docker://rhysd/actionlint:1.7.12
         with:
@@ -90,6 +93,7 @@ jobs:
       tags: ${{ matrix.tags }}
       parent-context: ${{ matrix.parent-context }}
       push: ${{ fromJSON(needs.plan.outputs.push) }}
+      multi-arch: ${{ matrix.multi-arch }}
     secrets:
       ADREGISTRY_USERNAME: ${{ secrets.ADREGISTRY_USERNAME }}
       ADREGISTRY_SECRET: ${{ secrets.ADREGISTRY_SECRET }}
@@ -114,6 +118,7 @@ jobs:
       tags: ${{ matrix.tags }}
       parent-context: ${{ matrix.parent-context }}
       push: ${{ fromJSON(needs.plan.outputs.push) }}
+      multi-arch: ${{ matrix.multi-arch }}
     secrets:
       ADREGISTRY_USERNAME: ${{ secrets.ADREGISTRY_USERNAME }}
       ADREGISTRY_SECRET: ${{ secrets.ADREGISTRY_SECRET }}

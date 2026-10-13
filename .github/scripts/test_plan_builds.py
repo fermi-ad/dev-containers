@@ -233,6 +233,11 @@ class TaggingTests(PlanTestCase):
             [{"platform": "amd64", "runner": "ubuntu-latest"}, {"platform": "arm64", "runner": "ubuntu-24.04-arm"}],
         )
 
+    def test_multi_arch_flag_follows_platform_count(self) -> None:
+        result = self.run_plan(PUSH_MAIN, ["standalone/Dockerfile", "base/Dockerfile"])
+        self.assertIs(self.entry(result, "standalone")["multi-arch"], False)
+        self.assertIs(self.entry(result, "base")["multi-arch"], True)
+
     def test_child_is_pinned_to_parent_built_in_same_run(self) -> None:
         result = self.run_plan(PUSH_MAIN, ["base/Dockerfile"])
         self.assertEqual(

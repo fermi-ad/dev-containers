@@ -217,6 +217,7 @@ def plan(env: dict[str, str], images: dict[str, Image], selected: set[str], toda
                 [{"platform": p, "runner": RUNNERS[p]} for p in image.platforms]
             ),
             "tags": "\n".join(tags(image)),
+            "multi-arch": len(image.platforms) > 1,
             "parent-context": parent_context,
         }
 

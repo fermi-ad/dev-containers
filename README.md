@@ -51,6 +51,7 @@ Before any image builds, the workflow's `checks` job runs the following. You can
 
 ```sh
 python3 -m unittest discover -s .github/scripts -v   # build planner tests, including validation of every image.json
+shellcheck .github/scripts/*.sh   # script lint
 docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12   # workflow lint
 git grep -nIP '\t|[ \t]+$' -- .   # must print nothing: no tabs or trailing whitespace
 ```
