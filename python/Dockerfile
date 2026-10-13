@@ -16,5 +16,6 @@ USER dev
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/home/dev/.local/bin:${PATH}"
 
-# Install Python 3.12
-RUN uv python install 3.12
+# Python release to install; also the image version tag.
+ARG PYTHON_VERSION=3.12
+RUN uv python install "$PYTHON_VERSION"

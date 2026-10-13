@@ -3,15 +3,16 @@
 # ============================================================================
 # Build arguments for version management
 # Override at build time with: docker build --build-arg PYTHON_VERSION=3.13
+# ALMALINUX_VERSION is also the image version tag.
 # ============================================================================
-ARG ALMALINUX_VERSION=9-base
+ARG ALMALINUX_VERSION=9.8
 ARG PYTHON_VERSION=3.12
 
 # ============================================================================
 # Base stage: Minimal runtime dependencies
 # Shared by all deployment variants (CLI, GUI, Xpra)
 # ============================================================================
-FROM almalinux/${ALMALINUX_VERSION}
+FROM almalinux/9-base:${ALMALINUX_VERSION}
 
 # Re-declare args for use in this stage
 ARG PYTHON_VERSION

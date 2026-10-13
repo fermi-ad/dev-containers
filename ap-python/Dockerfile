@@ -1,4 +1,6 @@
-FROM ghcr.io/astral-sh/uv:python3.12-trixie
+# Python release in the base image; also the image version tag.
+ARG PYTHON_VERSION=3.12
+FROM ghcr.io/astral-sh/uv:python${PYTHON_VERSION}-trixie
 
 RUN apt-get update -y && apt-get install -y \
 libdbus-1-3 \

@@ -26,13 +26,13 @@ RUN echo "%wheel ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/wheel \
     && chmod 0440 /etc/sudoers.d/wheel
 USER dev
 
-# Install rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+# Rust toolchain to install; also the image version tag.
+ARG RUST_VERSION=1.99.0
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain "$RUST_VERSION"
 ENV PATH="/home/dev/.cargo/bin:${PATH}"
 
 # Install coverage tools
-RUN rustup update && \
-    cargo install cargo-llvm-cov && \
+RUN cargo install cargo-llvm-cov && \
     rustup component add llvm-tools-preview && \
     rm -rf /home/dev/.cargo/registry && \
     rm -rf /home/dev/.cargo/git
