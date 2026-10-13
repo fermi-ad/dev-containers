@@ -24,9 +24,9 @@ RUN useradd -G wheel dev
 # Grant passwordless sudo permissions to the wheel group
 RUN echo "%wheel ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/wheel \
     && chmod 0440 /etc/sudoers.d/wheel
-USER dev 
+USER dev
 
-# Install rust 
+# Install rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/home/dev/.cargo/bin:${PATH}"
 

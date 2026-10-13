@@ -55,18 +55,18 @@ RUN dnf upgrade --refresh -y \
  && curl -L -o /etc/yum.repos.d/xpra.repo https://raw.githubusercontent.com/Xpra-org/xpra/master/packaging/repos/almalinux/xpra.repo \
  && dnf makecache \
  && dnf install -y \
- 	  openbox \
+      openbox \
       xpra-6.4.4* \
-	  xpra-audio-6.4.4* \
-	  xpra-client-6.4.4* \
-	  xpra-client-gtk3-6.4.4* \
-	  xpra-codecs-6.4.4* \
-	  xpra-codecs-nvidia-6.4.4* \
-	  xpra-common-6.4.4* \
-	  xpra-filesystem-6.4.4* \
-	  xpra-html5 \
-	  xpra-server-6.4.4* \
-	  xpra-x11-6.4.4* \
+      xpra-audio-6.4.4* \
+      xpra-client-6.4.4* \
+      xpra-client-gtk3-6.4.4* \
+      xpra-codecs-6.4.4* \
+      xpra-codecs-nvidia-6.4.4* \
+      xpra-common-6.4.4* \
+      xpra-filesystem-6.4.4* \
+      xpra-html5 \
+      xpra-server-6.4.4* \
+      xpra-x11-6.4.4* \
  && dnf clean all \
  && groupadd pygroup \
  && useradd -m -u 1000 -N -g pygroup pyuser \
