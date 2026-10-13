@@ -18,4 +18,7 @@ ENV PATH="/home/dev/.local/bin:${PATH}"
 
 # Python release to install; also the image version tag.
 ARG PYTHON_VERSION=3.12
-RUN uv python install "$PYTHON_VERSION"
+# Expose python and python3 alongside the versioned executable on PATH.
+RUN uv python install --default "$PYTHON_VERSION" \
+    && python3 --version \
+    && python --version
