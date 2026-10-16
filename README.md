@@ -19,6 +19,9 @@ Each top-level directory is one image, published to Harbor as `adregistry.fnal.g
 
 An image can build `FROM adregistry.fnal.gov/dev-containers/<other image>`, as most images here do with `redhat-ubi9-minimal`. These relationships are detected automatically: when the base image is rebuilt, every image built from it is rebuilt afterwards against the new base.
 
+## Python image
+The `python` image installs uv-managed Python. The default `python3` and `python` commands, as well as the versioned executable, use the release selected by `PYTHON_VERSION`. These commands are available on `PATH` for the image's `dev` user; no separate system Python is installed.
+
 ## Building images
 The [Build images](.github/workflows/build-images.yaml) workflow decides what to build from the files that changed:
 
