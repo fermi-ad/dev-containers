@@ -26,10 +26,15 @@ if [[ ! -S "$host_socket" ]]; then
   exit 1
 fi
 
-install -d -m 0755 "$proxy_dir"
+# A root-started postStartCommand may leave root-owned state under /run.
+# Grant dev ownership so later lifecycle invocations can acquire the lock.
+install -d -m 0755 -o dev -g dev "$proxy_dir"
 # Serialize concurrent lifecycle hooks so they reuse one working proxy.
+# Keep the lock file writable by dev across root-run lifecycle invocations.
+touch "$proxy_dir/start.lock"
+chown dev:dev "$proxy_dir/start.lock"
 deadline=$((SECONDS + startup_timeout))
-exec 9>"$proxy_dir/start.lock"
+exec 9<>"$proxy_dir/start.lock"
 lock_timeout=$((deadline - SECONDS))
 if (( lock_timeout <= 0 )) || ! flock --exclusive --wait "$lock_timeout" 9; then
   printf 'Timed out after %ss waiting for another Docker proxy startup to finish.\n' \
@@ -90,7 +95,8 @@ nohup "$socat_bin" \
 proxy_pid=$!
 proxy_ready=false
 # The EXIT trap invokes this indirectly after a startup failure.
-# shellcheck disable=SC2329
+# ShellCheck versions differ on whether they detect trap-registered functions.
+# shellcheck disable=SC2317,SC2329
 cleanup_failed_start() {
   if [[ "$proxy_ready" != true ]]; then
     stop_proxy "$proxy_pid"
