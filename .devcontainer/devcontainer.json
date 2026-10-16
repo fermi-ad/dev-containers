@@ -1,0 +1,27 @@
+{
+  "name": "dev-containers",
+  "image": "adregistry.fnal.gov/dev-containers/python:3.12-20261016-d9d7f4f",
+  "remoteUser": "dev",
+  "workspaceFolder": "${localWorkspaceFolder}",
+  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind,readonly"
+  ],
+  "containerEnv": {
+    "DOCKER_HOST": "unix:///run/devcontainer/docker.sock"
+  },
+  "onCreateCommand": "sudo -n bash .devcontainer/setup.sh",
+  "postStartCommand": "sudo -n bash .devcontainer/start-docker-proxy.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "github.vscode-pull-request-github"
+      ],
+      "settings": {
+        "terminal.integrated.inheritEnv": true
+      }
+    }
+  }
+}

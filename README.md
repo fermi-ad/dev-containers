@@ -22,6 +22,18 @@ An image can build `FROM adregistry.fnal.gov/dev-containers/<other image>`, as m
 ## Python image
 The `python` image installs uv-managed Python. The default `python3` and `python` commands, as well as the versioned executable, use the release selected by `PYTHON_VERSION`. These commands are available on `PATH` for the image's `dev` user; no separate system Python is installed.
 
+## This repository's dev container
+
+Open this repository in VS Code with the Dev Containers extension, then run **Dev Containers: Reopen in Container**. The container uses this repository's Python image pinned to an immutable tag; `.devcontainer/setup.sh` installs repository-only tools such as `jq`, ShellCheck, Docker CLI, and Buildx. These tools are intentionally not added to the shared Python image. After setup, run `bash .devcontainer/test-devcontainer.sh` from the integrated terminal as the `dev` user to run every command in [Checks](#checks).
+
+The dev container uses **Docker outside of Docker**: its Docker CLI connects through a container-local proxy to the Docker daemon on the host. Builds reuse the host's Docker cache and images; there is no second daemon. The dev container is not privileged. **Docker-in-Docker** would give this devcontainer its own daemon, storage, and cache and can mount files that exist only inside it, but needs a separate daemon setup and the standard feature runs privileged; that is not a security sandbox. A **dedicated remote daemon/VM** can provide a stronger boundary for untrusted workloads, at the cost of extra infrastructure, network setup, and a remote build cache. Omitting Docker access would also mean the README's Docker-based actionlint check cannot run unchanged.
+
+> **Security:** Access to a rootful Docker socket grants the ability to control that host's Docker daemon and is effectively root-equivalent on the daemon host. Treat code and tools run in this dev container as trusted with that authority. Commands such as `docker system prune` can affect other work on the host. The proxy limits socket permissions inside the dev container but does **not** limit Docker API authority. No host socket permissions are changed.
+
+The socket setup expects a local Linux Docker Engine **19.03 or newer** (Engine API 1.40+) at `/var/run/docker.sock` and a workspace backed by a host filesystem path, mounted at the same absolute path inside the dev container. Docker Desktop, rootless Docker, remote Docker contexts, Windows hosts, and workspaces cloned into a container volume may need different socket or path configuration; they are not currently covered by the checked setup. Registry credentials are not copied into the dev container; authenticate separately only if you need to pull private images. See Docker's [Engine API version matrix](https://docs.docker.com/reference/api/engine/version-history/) for the client/server compatibility reference.
+
+The Docker CLI and Buildx versions, ShellCheck release and checksums, and Docker repository signing-key fingerprint are pinned in `.devcontainer/setup.sh`. When updating them, verify the upstream release and checksum/signing key, update the script, rebuild the dev container, and rerun every command in [Checks](#checks). The Python base image should be updated only to an immutable tag that exists in Harbor and supports both `amd64` and `arm64`.
+
 ## Building images
 The [Build images](.github/workflows/build-images.yaml) workflow decides what to build from the files that changed:
 
