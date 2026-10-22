@@ -1,4 +1,10 @@
+# Rust toolchain to install; also the image version tag.
+ARG RUST_VERSION=1.99.1
+
 FROM adregistry.fnal.gov/dev-containers/redhat-ubi9-minimal
+
+# Redeclare for use inside this block
+ARG RUST_VERSION
 
 # Install utilities
 USER root
@@ -26,8 +32,6 @@ RUN echo "%wheel ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/wheel \
     && chmod 0440 /etc/sudoers.d/wheel
 USER dev
 
-# Rust toolchain to install; also the image version tag.
-ARG RUST_VERSION=1.99.0
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain "$RUST_VERSION"
 ENV PATH="/home/dev/.cargo/bin:${PATH}"
 
