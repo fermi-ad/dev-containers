@@ -22,6 +22,16 @@ An image can build `FROM adregistry.fnal.gov/dev-containers/<other image>`, as m
 ## Python image
 The `python` image installs uv-managed Python. The default `python3` and `python` commands, as well as the versioned executable, use the release selected by `PYTHON_VERSION`. These commands are available on `PATH` for the image's `dev` user; no separate system Python is installed.
 
+## This repository's dev container
+
+Open this repository in VS Code with the Dev Containers extension and run **Dev Containers: Reopen in Container**. The local image derives from the pinned Python image and adds repository-only tools. After it opens, run `bash .devcontainer/test-devcontainer.sh` as `dev` to run the [checks](#checks).
+
+Docker CLI commands go through a container-local proxy to the host's Docker daemon; there is no nested daemon. A rootful Docker socket grants effectively root-level control of the host, and the proxy does not restrict that authority. Use only a development-only Linux Docker host (Engine 19.03+); the workspace must be mounted at the same path inside the container. Other host/socket setups are not covered. **Do not use this container with production or accelerator-control hosts, or to run untrusted PRs or tools. It is not a sandbox.** Registry credentials are not copied into the container. The Harbor scan and its limitations are documented in the [image security assessment](.devcontainer/SECURITY.md).
+
+The socket setup expects a local Linux Docker Engine **19.03 or newer** (Engine API 1.40+) at `/var/run/docker.sock` and a workspace backed by a host filesystem path, mounted at the same absolute path inside the dev container. Docker Desktop, rootless Docker, remote Docker contexts, Windows hosts, and workspaces cloned into a container volume may need different socket or path configuration; they are not currently covered by the checked setup. Registry credentials are not copied into the dev container; authenticate separately only if you need to pull private images. See Docker's [Engine API version matrix](https://docs.docker.com/reference/api/engine/version-history/) for the client/server compatibility reference.
+
+Tool versions and verification pins are grouped at the top of `.devcontainer/setup.sh`. Verify upstream releases, checksums, and signing keys when updating them, then rebuild and rerun the [checks](#checks). To refresh the Python base, choose a release supporting `amd64` and `arm64`, verify its multi-platform index digest, and update the tag and digest in `.devcontainer/Dockerfile.
+
 ## Building images
 The [Build images](.github/workflows/build-images.yaml) workflow decides what to build from the files that changed:
 
@@ -54,7 +64,11 @@ Before any image builds, the workflow's `checks` job runs the following. You can
 
 ```sh
 python3 -m unittest discover -s .github/scripts -v   # build planner tests, including validation of every image.json
-shellcheck .github/scripts/*.sh   # script lint
+shellcheck .github/scripts/*.sh .devcontainer/*.sh   # script lint (install ShellCheck from environment or default)
+python3 -m json.tool .devcontainer/devcontainer.json >/dev/null   # devcontainer JSON validation
+bash .devcontainer/test-docker-proxy.sh   # bounded readiness and repeated-startup regression tests
 docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12   # workflow lint
 git grep -nIP '\t|[ \t]+$' -- .   # must print nothing: no tabs or trailing whitespace
 ```
+
+The PR CI also builds and opens a fresh devcontainer on an ephemeral GitHub-hosted runner, then runs `bash .devcontainer/test-devcontainer.sh` as `dev`. The test uses only that disposable runner's daemon and removes its container afterward.

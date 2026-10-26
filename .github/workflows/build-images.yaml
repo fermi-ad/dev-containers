@@ -39,8 +39,10 @@ jobs:
       - name: Test build planner
         run: python3 -m unittest discover -s .github/scripts -v
 
-      - name: Lint scripts
-        run: shellcheck .github/scripts/*.sh
+      - name: Lint scripts and validate devcontainer
+        run: |
+          shellcheck .github/scripts/*.sh .devcontainer/*.sh
+          python3 -m json.tool .devcontainer/devcontainer.json >/dev/null
 
       - name: Lint workflows
         uses: docker://rhysd/actionlint:1.7.12
@@ -54,8 +56,35 @@ jobs:
             exit 1
           fi
 
-  plan:
+  devcontainer-smoke:
     needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install Dev Container CLI
+        run: npm install --global @devcontainers/cli@0.89.0
+
+      - name: Build, open, and test a fresh devcontainer
+        env:
+          DOCKER_HOST: unix:///var/run/docker.sock
+          DEVCONTAINER_ID: pr-${{ github.event.pull_request.number || github.run_id }}-${{ github.run_attempt }}
+        run: |
+          devcontainer up --workspace-folder "$GITHUB_WORKSPACE" --id-label "ci-smoke=$DEVCONTAINER_ID" --remove-existing-container --no-lockfile
+          devcontainer exec --workspace-folder "$GITHUB_WORKSPACE" --id-label "ci-smoke=$DEVCONTAINER_ID" bash .devcontainer/test-devcontainer.sh
+
+      - name: Remove smoke-test container
+        if: always()
+        env:
+          DOCKER_HOST: unix:///var/run/docker.sock
+          DEVCONTAINER_ID: pr-${{ github.event.pull_request.number || github.run_id }}-${{ github.run_attempt }}
+        run: |
+          docker ps -aq --filter "label=ci-smoke=$DEVCONTAINER_ID" | xargs -r docker rm -f || true
+
+  plan:
+    needs: [checks, devcontainer-smoke]
     runs-on: ubuntu-latest
     outputs:
       base: ${{ steps.plan.outputs.base }}

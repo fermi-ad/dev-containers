@@ -84,12 +84,17 @@ class DiscoverTests(PlanTestCase):
         self.assertEqual(images["child"].parent_ref, f"{REGISTRY}/base")
         self.assertEqual(images["standalone"].platforms, ("amd64",))
 
-    def test_ignores_directories_without_dockerfile(self) -> None:
+    def test_ignores_hidden_directories_and_directories_without_dockerfile(self) -> None:
         fixture(self.root)
         (self.root / "docs").mkdir()
-        (self.root / ".github").mkdir()
-        (self.root / ".github" / "Dockerfile").write_text("FROM x\n")
-        self.assertEqual(sorted(self.images()), ["base", "child", "standalone"])
+        for hidden in (".github", ".devcontainer"):
+            directory = self.root / hidden
+            directory.mkdir()
+            (directory / "Dockerfile").write_text("FROM x\n")
+            (directory / "image.json").write_text('{"version_arg": "V"}')
+        images = self.images()
+        self.assertEqual(sorted(images), ["base", "child", "standalone"])
+        self.assertEqual(pb.images_in([".devcontainer/Dockerfile"], images), set())
 
     def assert_invalid(self, message: str) -> None:
         with self.assertRaisesRegex(pb.PlanError, message):

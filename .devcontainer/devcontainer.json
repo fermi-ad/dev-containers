@@ -1,0 +1,29 @@
+{
+  "name": "dev-containers",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "remoteUser": "dev",
+  "workspaceFolder": "${localWorkspaceFolder}",
+  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind,readonly"
+  ],
+  "containerEnv": {
+    "DOCKER_HOST": "unix:///run/devcontainer/docker.sock"
+  },
+  "postStartCommand": "sudo -n bash .devcontainer/start-docker-proxy.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "github.vscode-pull-request-github"
+      ],
+      "settings": {
+        "terminal.integrated.inheritEnv": true
+      }
+    }
+  }
+}
