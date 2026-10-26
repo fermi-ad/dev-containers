@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Tool versions and upstream verification pins. Update these values together
+# when intentionally refreshing the development toolchain.
+JQ_PACKAGE_VERSION=1.6-19.el9_8.2
+SOCAT_PACKAGE_VERSION=1.7.4.1-8.el9
+DOCKER_KEY_FINGERPRINT=060A61C51B558A7F742B77AAC52FEB6B621E9F35
+DOCKER_CLI_PACKAGE_VERSION=29.9.1-1.el9
+DOCKER_BUILDX_PACKAGE_VERSION=0.38.0-1.el9
+SHELLCHECK_VERSION=0.11.0
+SHELLCHECK_SHA256_X86_64=b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6
+SHELLCHECK_SHA256_AARCH64=68a8133197a50beb8803f8d42f9908d1af1c5540d4bb05fdfca8c1fa47decefc
+
 # Install development-only tools in this container, not in the shared image.
 # Docker commands will use a root-started, container-local proxy for the
 # host socket. The proxy changes socket permissions only inside this container.
@@ -13,8 +24,8 @@ fi
 
 # curl, gpg, sha256sum, and tar are already present in the base image.
 "${sudo[@]}" microdnf --setopt=install_weak_deps=0 install -y \
-  jq-1.6-19.el9_8.2 \
-  socat-1.7.4.1-8.el9
+  "jq-$JQ_PACKAGE_VERSION" \
+  "socat-$SOCAT_PACKAGE_VERSION"
 
 # Configure Docker's official CentOS 9 repository for the signed RHEL 9 CLI
 # and Buildx packages. Verify the upstream signing-key fingerprint before
@@ -23,8 +34,7 @@ tmp_dir=$(mktemp -d)
 trap 'rm -rf "$tmp_dir"' EXIT
 curl -fsSL https://download.docker.com/linux/centos/gpg -o "$tmp_dir/docker.gpg"
 fingerprint=$(gpg --batch --show-keys --with-colons "$tmp_dir/docker.gpg" | awk -F: '$1 == "fpr" { print $10; exit }')
-expected_fingerprint=060A61C51B558A7F742B77AAC52FEB6B621E9F35
-if [[ "$fingerprint" != "$expected_fingerprint" ]]; then
+if [[ "$fingerprint" != "$DOCKER_KEY_FINGERPRINT" ]]; then
   printf 'Unexpected Docker repository signing-key fingerprint: %s\n' "$fingerprint" >&2
   exit 1
 fi
@@ -41,37 +51,37 @@ REPO
 # Keep CLI and Buildx at verified versions. jq and socat come from the
 # repositories configured by the UBI base image.
 "${sudo[@]}" microdnf --setopt=install_weak_deps=0 install -y \
-  docker-ce-cli-29.9.1-1.el9 \
-  docker-buildx-plugin-0.38.0-1.el9
+  "docker-ce-cli-$DOCKER_CLI_PACKAGE_VERSION" \
+  "docker-buildx-plugin-$DOCKER_BUILDX_PACKAGE_VERSION"
 "${sudo[@]}" microdnf clean all
 
-# Install a pinned ShellCheck release. Upstream does not publish checksum
-# files, so pin the release artifact hashes here for each supported arch.
+# Install ShellCheck. Upstream does not publish checksum files, so verify the
+# pinned release artifact hash for each supported architecture.
 case "$(uname -m)" in
   x86_64)
     shellcheck_arch=x86_64
-    shellcheck_sha256=b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6
+    shellcheck_sha256=$SHELLCHECK_SHA256_X86_64
     ;;
   aarch64)
     shellcheck_arch=aarch64
-    shellcheck_sha256=68a8133197a50beb8803f8d42f9908d1af1c5540d4bb05fdfca8c1fa47decefc
+    shellcheck_sha256=$SHELLCHECK_SHA256_AARCH64
     ;;
   *)
     printf 'Unsupported architecture for ShellCheck: %s\n' "$(uname -m)" >&2
     exit 1
     ;;
 esac
-shellcheck_archive="shellcheck-v0.11.0.linux.${shellcheck_arch}.tar.gz"
-curl -fsSL "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/${shellcheck_archive}" \
+shellcheck_archive="shellcheck-v${SHELLCHECK_VERSION}.linux.${shellcheck_arch}.tar.gz"
+curl -fsSL "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/${shellcheck_archive}" \
   -o "$tmp_dir/$shellcheck_archive"
 printf '%s  %s\n' "$shellcheck_sha256" "$tmp_dir/$shellcheck_archive" | sha256sum --check
 mkdir "$tmp_dir/shellcheck"
 tar -xzf "$tmp_dir/$shellcheck_archive" -C "$tmp_dir/shellcheck"
 "${sudo[@]}" install -m 0755 \
-  "$tmp_dir/shellcheck/shellcheck-v0.11.0/shellcheck" \
+  "$tmp_dir/shellcheck/shellcheck-v${SHELLCHECK_VERSION}/shellcheck" \
   /usr/local/bin/shellcheck
 "${sudo[@]}" install -D -m 0644 \
-  "$tmp_dir/shellcheck/shellcheck-v0.11.0/LICENSE.txt" \
+  "$tmp_dir/shellcheck/shellcheck-v${SHELLCHECK_VERSION}/LICENSE.txt" \
   /usr/share/licenses/shellcheck/LICENSE.txt
 
 printf '\nInstalled development tools:\n'
