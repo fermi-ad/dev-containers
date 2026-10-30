@@ -32,3 +32,5 @@ RUN git clone --depth 1 -b "$FLUTTER_VERSION" https://github.com/flutter/flutter
     flutter bash-completion > ~/.bash-completion/flutter && \
     chmod +x ~/.bash-completion/flutter && \
     echo 'source ~/.bash-completion/flutter' >> ~/.bashrc
+
+LABEL devcontainer.metadata='[{"customizations":{"vscode":{"extensions":["ZooCodeOrganization.zoo-code","RooVeterinaryInc.roo-cline"]}}}]'
